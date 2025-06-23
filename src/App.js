@@ -1,24 +1,62 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import AuthPage from './pages/AuthPage';
+import SenderDashboard from './pages/SenderDashboard';
+import HandlerDashboard from './pages/HandlerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import ProfilePage from './pages/ProfilePage'; // ✅ Import ProfilePage
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        {/* Public route */}
+        <Route path="/" element={<AuthPage />} />
+
+        {/* Protected routes with role-based access */}
+        <Route
+          path="/sender-dashboard"
+          element={
+            <ProtectedRoute role="Sender">
+              <SenderDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/handler-dashboard"
+          element={
+            <ProtectedRoute role="Handler">
+              <HandlerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute role="Admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Profile page accessible to any authenticated user */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch all - redirect to login */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 
