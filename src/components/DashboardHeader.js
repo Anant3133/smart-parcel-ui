@@ -11,7 +11,7 @@ export default function DashboardHeader({ title }) {
       <div className="flex items-center space-x-4">
         <button
           onClick={() => navigate('/profile')}
-          className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
+          className="flex bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
         >
           Profile
         </button>

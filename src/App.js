@@ -4,9 +4,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/AuthPage';
 import SenderDashboard from './pages/SenderDashboard';
 import HandlerDashboard from './pages/HandlerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import ProfilePage from './pages/ProfilePage'; // ✅ Import ProfilePage
+import ProfilePage from './pages/ProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
+
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminParcels from './pages/AdminParcels';
+import AdminTamperAlerts from './pages/AdminTamperAlerts';
+import AdminAnalytics from './pages/AdminAnalytics';
 
 function App() {
   return (
@@ -15,7 +21,24 @@ function App() {
         {/* Public route */}
         <Route path="/" element={<AuthPage />} />
 
-        {/* Protected routes with role-based access */}
+  {/* Admin Nested Routes */}
+<Route
+  path="/admin-dashboard/*"
+  element={
+    <ProtectedRoute role="Admin">
+      <AdminLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route index element={<AdminDashboard />} />
+  <Route path="users" element={<AdminUsers />} />
+  <Route path="parcels" element={<AdminParcels />} />
+  <Route path="tamper-alerts" element={<AdminTamperAlerts />} />
+  <Route path="analytics" element={<AdminAnalytics />} />
+</Route>
+
+
+        {/* Other dashboards */}
         <Route
           path="/sender-dashboard"
           element={
@@ -24,7 +47,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/handler-dashboard"
           element={
@@ -34,16 +56,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/admin-dashboard"
-          element={
-            <ProtectedRoute role="Admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Profile page accessible to any authenticated user */}
+        {/* Profile */}
         <Route
           path="/profile"
           element={
@@ -53,7 +66,7 @@ function App() {
           }
         />
 
-        {/* Catch all - redirect to login */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
