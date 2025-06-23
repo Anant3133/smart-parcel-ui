@@ -48,13 +48,16 @@ function App() {
           }
         />
         <Route
-          path="/handler-dashboard"
+          path="/handler-dashboard/*"
           element={
-            <ProtectedRoute role="Handler">
-              <HandlerDashboard />
-            </ProtectedRoute>
+             <ProtectedRoute role="Handler">
+               <HandlerDashboard />
+             </ProtectedRoute>
           }
-        />
+       >
+  <Route index element={<div>Handler home page</div>} />
+  <Route path="parcels" element={<AdminParcels />} />
+</Route>
 
         {/* Profile */}
         <Route

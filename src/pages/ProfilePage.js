@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchProfile, updateProfile } from '../api/profile';
 import LogoutButton from '../components/LogoutButton';
 import { fetchMyParcels } from '../api/parcel'; // for sender stats
+import { FiArrowLeftCircle } from 'react-icons/fi';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -187,12 +188,13 @@ export default function ProfilePage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
 
-          <button
-            onClick={handleReturnToDashboard}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-          >
-            Return to Dashboard
-          </button>
+         <button
+      onClick={handleReturnToDashboard}
+      className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow-md transition-transform transform hover:scale-105"
+    >
+      <FiArrowLeftCircle size={18} />
+      Return to Dashboard
+    </button>
         </div>
       </div>
     </div>

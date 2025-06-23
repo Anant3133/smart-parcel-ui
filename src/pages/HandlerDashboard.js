@@ -10,6 +10,9 @@ import { raiseTamperAlert } from '../api/tamper';
 import { Pie } from 'react-chartjs-2';
 import toast, { Toaster } from 'react-hot-toast';
 import { FiRefreshCcw, FiAlertTriangle, FiClock, FiPackage, FiMapPin } from 'react-icons/fi';
+import { Outlet } from 'react-router-dom';  
+import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import {
   Chart as ChartJS,
@@ -21,6 +24,8 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function HandlerDashboard() {
+  // Navigation
+  const navigate = useNavigate();
   // Form States
   const [trackingId, setTrackingId] = useState('');
   const [location, setLocation] = useState('');
@@ -79,28 +84,37 @@ export default function HandlerDashboard() {
 
   // Form submission handler
   const handleLogHandover = async () => {
-    if (!trackingId.trim() || !location.trim() || !selectedStatus) {
-      toast.error('Please fill all the fields');
-      return;
+  if (!trackingId.trim() || !location.trim() || !selectedStatus) {
+    toast.error('Please fill all the fields');
+    return;
+  }
+
+  try {
+    const data = await logHandover({
+      parcelTrackingId: trackingId.trim(),
+      action: selectedStatus,
+      location: location.trim(),
+    });
+    setResult(data);
+
+    toast.success('Handover logged successfully!');
+
+    if (data.tamperDetected) {
+      toast.error(`Tamper Alert: ${data.tamperMessage || 'Potential tampering detected!'}`, {
+        duration: 8000,
+        icon: '⚠',
+      });
     }
 
-    try {
-      const data = await logHandover({
-        parcelTrackingId: trackingId.trim(),
-        action: selectedStatus,
-        location: location.trim(),
-      });
-      setResult(data);
-      toast.success('Handover logged successfully!');
-      setTrackingId('');
-      setLocation('');
-      setSelectedStatus('');
-      await fetchParcels();
-    } catch (error) {
-      console.error('Handover logging failed:', error);
-      toast.error('Handover failed. Check Tracking ID and try again.');
-    }
-  };
+    setTrackingId('');
+    setLocation('');
+    setSelectedStatus('');
+    await fetchParcels();
+  } catch (error) {
+    console.error('Handover logging failed:', error);
+    toast.error('Handover failed. Check Tracking ID and try again.');
+  }
+};
 
   // Show status popup
   const handleShowStatus = async (trackingId) => {
@@ -178,7 +192,7 @@ export default function HandlerDashboard() {
 
   useEffect(() => {
     fetchParcels();
-    fetchAllUsers();
+    
   }, []);
 
   return (
@@ -437,6 +451,7 @@ export default function HandlerDashboard() {
           handlersMap={handlersMap}
         />
       )}
+      <Outlet />
     </div>
   );
 }

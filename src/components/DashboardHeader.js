@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
+import { FiUser } from 'react-icons/fi'; // Icon for profile
 
 export default function DashboardHeader({ title }) {
   const navigate = useNavigate();
@@ -11,8 +12,10 @@ export default function DashboardHeader({ title }) {
       <div className="flex items-center space-x-4">
         <button
           onClick={() => navigate('/profile')}
-          className="flex bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
+          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-md shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          title="Go to Profile"
         >
+          <FiUser size={26} />
           Profile
         </button>
         <LogoutButton />

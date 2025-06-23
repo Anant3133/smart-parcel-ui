@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiArrowLeftCircle } from 'react-icons/fi';
 
 export default function ReturnToDashboardButton({ role }) {
   const navigate = useNavigate();
@@ -16,15 +17,16 @@ export default function ReturnToDashboardButton({ role }) {
         navigate('/handler-dashboard');
         break;
       default:
-        navigate('/'); // fallback, maybe to login or home
+        navigate('/');
     }
   };
 
   return (
     <button
       onClick={handleClick}
-      className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded"
+      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-400"
     >
+      <FiArrowLeftCircle size={18} />
       Return to Dashboard
     </button>
   );
