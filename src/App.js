@@ -2,62 +2,41 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import AuthPage from './pages/AuthPage';
-import SenderDashboard from './pages/SenderDashboard';
-import HandlerDashboard from './pages/HandlerDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-import AdminLayout from './components/AdminLayout';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminUsers from './pages/AdminUsers';
-import AdminParcels from './pages/AdminParcels';
-import AdminTamperAlerts from './pages/AdminTamperAlerts';
-import AdminAnalytics from './pages/AdminAnalytics';
+import UnifiedDashboard from './pages/UnifiedDashboard';
 
 function App() {
   return (
     <Router>
+      <ToastContainer
+  position="top-right"
+  autoClose={3000}           // <-- Important
+  hideProgressBar={false}
+  newestOnTop={false}
+  closeOnClick
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="dark"
+/>
       <Routes>
         {/* Public route */}
         <Route path="/" element={<AuthPage />} />
 
-  {/* Admin Nested Routes */}
-<Route
-  path="/admin-dashboard/*"
-  element={
-    <ProtectedRoute role="Admin">
-      <AdminLayout />
-    </ProtectedRoute>
-  }
->
-  <Route index element={<AdminDashboard />} />
-  <Route path="users" element={<AdminUsers />} />
-  <Route path="parcels" element={<AdminParcels />} />
-  <Route path="tamper-alerts" element={<AdminTamperAlerts />} />
-  <Route path="analytics" element={<AdminAnalytics />} />
-</Route>
-
-
-        {/* Other dashboards */}
+        {/* Unified Dashboard route */}
         <Route
-          path="/sender-dashboard"
+          path="/dashboard"
           element={
-            <ProtectedRoute role="Sender">
-              <SenderDashboard />
+            <ProtectedRoute>
+              <UnifiedDashboard />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/handler-dashboard/*"
-          element={
-             <ProtectedRoute role="Handler">
-               <HandlerDashboard />
-             </ProtectedRoute>
-          }
-       >
-  <Route index element={<div>Handler home page</div>} />
-  <Route path="parcels" element={<AdminParcels />} />
-</Route>
 
         {/* Profile */}
         <Route
@@ -69,7 +48,7 @@ function App() {
           }
         />
 
-        {/* Catch all */}
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

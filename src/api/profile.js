@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from '../utils/token';
 
-const BASE = 'http://localhost:5180/api/profile';
+const BASE = `http://${window.location.hostname}:5180/api/profile`;
 
 export async function fetchProfile() {
   const res = await axios.get(`${BASE}/userinfo`, {

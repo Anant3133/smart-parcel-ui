@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getToken } from '../utils/token';
 
-const BASE = 'http://localhost:5180/api/parcel';
-const HANDOVER_BASE = 'http://localhost:5180/api/handover';
+const BASE = `http://${window.location.hostname}:5180/api/parcel`;
+const HANDOVER_BASE = `http://${window.location.hostname}:5180/api/handover`;
 
 export async function createParcel(data) {
   const res = await axios.post(`${BASE}/create`, data, {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from '../utils/token';
 
-const BASE = 'http://localhost:5180/api/handover';
+const BASE = `http://${window.location.hostname}:5180/api/handover`;
 
 export async function logHandover(data) {
   const res = await axios.post(`${BASE}/log`, data, {

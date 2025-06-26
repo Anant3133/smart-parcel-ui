@@ -1,24 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getTokenPayload } from '../utils/token';
 import { FiArrowLeftCircle } from 'react-icons/fi';
 
-export default function ReturnToDashboardButton({ role }) {
+export default function ReturnToDashboardButton() {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    switch (role) {
-      case 'Admin':
-        navigate('/admin-dashboard');
-        break;
-      case 'Sender':
-        navigate('/sender-dashboard');
-        break;
-      case 'Handler':
-        navigate('/handler-dashboard');
-        break;
-      default:
-        navigate('/');
+    const payload = getTokenPayload();
+    console.log('ReturnToDashboardButton: token payload:', payload);
+
+    if (!payload) {
+      console.warn('No valid token found — redirecting to login.');
+      navigate('/');
+      return;
     }
+
+    navigate('/dashboard');  // UnifiedDashboard route
   };
 
   return (

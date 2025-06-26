@@ -39,7 +39,7 @@ export default function AuthPage() {
           return;
         }
 
-        navigate(`/${userRole}-dashboard`);
+        navigate(`/dashboard`);
       } else {
         throw new Error('Auth failed');
       }

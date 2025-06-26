@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5180/api/TamperAlert';
+const BASE_URL = `http://${window.location.hostname}:5180/api/TamperAlert`;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');

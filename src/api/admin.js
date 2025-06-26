@@ -1,13 +1,17 @@
 import axios from 'axios';
 import { getToken } from '../utils/token';
 
-const BASE = 'http://localhost:5180/api/admin';
+const BASE = `http://${window.location.hostname}:5180/api/admin`;
 
-const authHeader = () => ({
-  headers: {
-    Authorization: `Bearer ${getToken()}`,
-  },
-});
+const authHeader = () => {
+  const token = getToken();
+  console.log('🔐 Token being used in admin API:', token); 
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
 
 export async function fetchUsers() {
   const res = await axios.get(`${BASE}/users`, authHeader());

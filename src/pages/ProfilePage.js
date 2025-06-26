@@ -66,13 +66,13 @@ export default function ProfilePage() {
   const handleReturnToDashboard = () => {
     switch (profile.role.toLowerCase()) {
       case 'admin':
-        navigate('/admin-dashboard');
+        navigate('/dashboard');
         break;
       case 'sender':
-        navigate('/sender-dashboard');
+        navigate('/dashboard');
         break;
       case 'handler':
-        navigate('/handler-dashboard');
+        navigate('/dashboard');
         break;
       default:
         navigate('/');
