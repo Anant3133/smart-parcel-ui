@@ -1,11 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import 'leaflet/dist/leaflet.css';
 
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AllParcelsList from './pages/AllParcelsList';
 
 import UnifiedDashboard from './pages/UnifiedDashboard';
 
@@ -47,6 +49,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* All Parcels List */}
+        <Route path="/all-parcels" element={<AllParcelsList />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" />} />

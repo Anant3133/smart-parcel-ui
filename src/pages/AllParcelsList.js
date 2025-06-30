@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { fetchParcels } from '../api/admin';
 import { fetchQRCode } from '../api/parcel';
+import { fetchParcels } from '../api/handover';
 import QRCodeModal from '../components/QRCodeModal';
+import { useNavigate } from 'react-router-dom';
 import { FiTruck, FiUser, FiClipboard, FiPieChart } from 'react-icons/fi';
 import { Pie } from 'react-chartjs-2';
+import { FiArrowLeftCircle } from 'react-icons/fi';
+import { getTokenPayload } from '../utils/token';  
+
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -13,14 +18,35 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function AdminParcels() {
+export default function AllParcelsList() {
   const [parcels, setParcels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [qrCode, setQrCode] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState({
+      id: '',
+      email: '',
+      name: '',
+      role: '',
+      joinedOn: '',
+    });
 
   useEffect(() => {
+    // Decode token and set profile
+    const payload = getTokenPayload();
+    if (payload) {
+      setProfile({
+        id: payload.sub || '',
+        email: payload.email || '',
+        name: payload.name || '',
+        role: payload.role || '',
+        joinedOn: payload.iat || '',
+      });
+    }
+
+    // Fetch parcels data
     (async () => {
       try {
         const data = await fetchParcels();
@@ -33,9 +59,10 @@ export default function AdminParcels() {
     })();
   }, []);
 
+
   const openQRCodeModal = async (trackingId) => {
     setShowQrModal(true);
-    setQrCode(null); // reset for new load
+    setQrCode(null);
     try {
       const res = await fetchQRCode(trackingId);
       setQrCode(res.qrCode);
@@ -49,8 +76,20 @@ export default function AdminParcels() {
     setQrCode(null);
   };
 
-  if (loading) return <div className="text-white p-6">Loading parcels...</div>;
-  if (error) return <div className="text-red-600 p-6">{error}</div>;
+  const handleReturnToDashboard = () => {
+  const role = profile.role?.toLowerCase();
+
+  if (role === 'admin') {
+    navigate('/dashboard');
+  } else if (role === 'sender') {
+    navigate('/dashboard');
+  } else if (role === 'handler') {
+    navigate('/dashboard');  // Assuming handler dashboard route is /uni
+  } else {
+    navigate('/');  // fallback login or home page
+  }
+ };
+
 
   const statusCounts = {
     Received: 0,
@@ -71,67 +110,74 @@ export default function AdminParcels() {
     labels: Object.keys(statusCounts),
     datasets: [
       {
-        label: 'Parcel Status Distribution',
+        label: 'Parcel Status',
         data: Object.values(statusCounts),
-        backgroundColor: ['#3b82f6', '#facc15', '#a78bfa', '#f97316', '#22c55e'],
+        backgroundColor: ['#8b5cf6', '#eab308', '#38bdf8', '#f97316', '#10b981'],
         borderColor: '#1f2937',
         borderWidth: 2,
       },
     ],
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-black p-8 text-white font-sans">
-      <h1 className="text-4xl font-extrabold mb-8 flex items-center gap-3">
-        <FiTruck className="text-green-500" size={40} />
-        Parcel Overview
-      </h1>
+  if (loading) return <div className="text-white p-6">Loading parcels...</div>;
+  if (error) return <div className="text-red-600 p-6">{error}</div>;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {/* Wrap the mapped JSX in a React fragment */}
-        <>
-          {[
-            {
-              icon: FiClipboard,
-              label: 'Total Parcels',
-              value: parcels.length,
-              color: 'text-indigo-400',
-              glow: 'rgba(99,102,241,0.7)',
-            },
-            {
-              icon: FiUser,
-              label: 'Unique Recipients',
-              value: new Set(parcels.map(p => p.recipientName ?? p.RecipientName)).size,
-              color: 'text-rose-400',
-              glow: 'rgba(244,63,94,0.6)',
-            },
-            {
-              icon: FiPieChart,
-              label: 'Delivered Parcels',
-              value: statusCounts['Delivered'],
-              color: 'text-emerald-400',
-              glow: 'rgba(52,211,153,0.6)',
-            },
-          ].map(({ icon: Icon, label, value, color, glow }) => (
-            <div
-              key={label}
-              className={`bg-gray-800 rounded-lg p-6 shadow-lg flex items-center gap-4
-                transition duration-300 ease-in-out
-                hover:scale-[1.03] cursor-pointer`}
-              style={{ boxShadow: `0 0 8px 2px ${glow}` }}
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black text-white p-8 font-sans">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold flex items-center gap-3 text-purple-400">
+          <FiTruck className="text-purple-400" size={40} />
+          All Parcels List
+        </h1>
+        <button
+              onClick={handleReturnToDashboard}
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow-md transition-transform transform hover:scale-105"
             >
-              <Icon size={48} className={color} />
-              <div>
-                <h2 className="text-2xl font-semibold">{label}</h2>
-                <p className="text-4xl font-bold">{value}</p>
-              </div>
+              <FiArrowLeftCircle size={18} />
+              Return to Dashboard
+            </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {[
+          {
+            icon: FiClipboard,
+            label: 'Total Parcels',
+            value: parcels.length,
+            color: 'text-purple-400',
+            glow: 'rgba(168,85,247,0.6)',
+          },
+          {
+            icon: FiUser,
+            label: 'Unique Recipients',
+            value: new Set(parcels.map(p => p.recipientName ?? p.RecipientName)).size,
+            color: 'text-pink-400',
+            glow: 'rgba(244,114,182,0.5)',
+          },
+          {
+            icon: FiPieChart,
+            label: 'Delivered',
+            value: statusCounts['Delivered'],
+            color: 'text-green-400',
+            glow: 'rgba(52,211,153,0.5)',
+          },
+        ].map(({ icon: Icon, label, value, color, glow }) => (
+          <div
+            key={label}
+            className={`bg-gray-800 rounded-lg p-6 shadow-lg flex items-center gap-4
+              transition duration-300 ease-in-out hover:scale-[1.02]`}
+            style={{ boxShadow: `0 0 8px 2px ${glow}` }}
+          >
+            <Icon size={40} className={color} />
+            <div>
+              <h2 className="text-lg font-semibold">{label}</h2>
+              <p className="text-3xl font-bold">{value}</p>
             </div>
-          ))}
-        </>
+          </div>
+        ))}
       </div>
 
-      <div className="max-w-xl mx-auto mb-12 bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+      <div className="max-w-xl mx-auto mb-12 bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
           <FiPieChart /> Parcel Status Breakdown
         </h2>
         <Pie
@@ -148,9 +194,9 @@ export default function AdminParcels() {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-700 bg-gray-900 p-6">
+      <div className="overflow-x-auto border border-gray-700 rounded-lg bg-gray-900 p-6 shadow">
         <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-gray-800 sticky top-0">
+          <thead className="bg-gray-800">
             <tr>
               {[
                 'Tracking ID',
@@ -176,7 +222,7 @@ export default function AdminParcels() {
                 key={p.trackingId ?? p.TrackingId}
                 className={idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900'}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-indigo-300 font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-300 font-medium">
                   {p.trackingId ?? p.TrackingId}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
@@ -194,10 +240,10 @@ export default function AdminParcels() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
                   {p.status ?? p.Status ?? 'Unknown'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-400">
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <button
-                   onClick={() => openQRCodeModal(p.trackingId ?? p.TrackingId)}
-                   className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-200 text-sm"
+                    onClick={() => openQRCodeModal(p.trackingId ?? p.TrackingId)}
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
                   >
                     Show QR
                   </button>
@@ -208,10 +254,7 @@ export default function AdminParcels() {
         </table>
       </div>
 
-      {/* 🔳 QR Code Modal */}
-      {showQrModal && (
-        <QRCodeModal qrCode={qrCode} onClose={closeQRCodeModal} />
-      )}
+      {showQrModal && <QRCodeModal qrCode={qrCode} onClose={closeQRCodeModal} />}
     </div>
   );
 }

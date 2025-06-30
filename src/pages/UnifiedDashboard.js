@@ -10,7 +10,7 @@ import AdminUsers from './AdminUsers';
 import AdminParcels from './AdminParcels';
 import AdminTamperAlerts from './AdminTamperAlerts';
 import AdminAnalytics from './AdminAnalytics';
-import { createParcel, fetchMyParcels, getParcelsHandledByHandler } from '../api/parcel';
+import { createParcel, fetchMyParcels, getParcelsHandledByHandler, fetchQRCode } from '../api/parcel';
 import { fetchParcelStatusLogs } from '../api/status';
 import DashboardHeader from '../components/DashboardHeader';
 import TimelineModal from '../components/TimelineModal';
@@ -24,6 +24,9 @@ import { raiseTamperAlert } from '../api/tamper';
 import { fetchUsers, fetchAlerts, fetchParcels } from '../api/admin';
 import AdminSidebar from '../components/AdminSidebar';
 import QRCodeScanner from "../components/QRCodeScanner";
+import RouteMap from '../components/RouteMap';
+import { fetchRouteByTrackingId } from "../api/route";
+import QRCodeModal from '../components/QRCodeModal';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -347,6 +350,42 @@ export default function UnifiedDashboard() {
     }
   };
 
+  //RouteMap
+  const [showMap, setShowMap] = useState(false);
+  const [routeData, setRouteData] = useState(null);
+
+  const handleShowRoute = async (trackingId) => {
+    try {
+      const data = await fetchRouteByTrackingId(trackingId);
+      setRouteData(data);
+      setShowMap(true);
+      } catch (err) {
+      console.error("Failed to fetch route", err);
+      }
+      };
+
+  //QR Code Modal
+  const [qrCode, setQrCode] = React.useState(null);
+  const [showQrModal, setShowQrModal] = React.useState(false);
+
+  const openQRCodeModal = async (trackingId) => {
+    setShowQrModal(true);
+    setQrCode(null); // reset
+
+    try {
+      const data = await fetchQRCode(trackingId);
+      setQrCode(data.qrCode);
+     } catch (error) {
+      console.error('Failed to fetch QR code', error);
+      // optionally show toast error here
+     }
+    };
+
+  const closeQRCodeModal = () => {
+    setShowQrModal(false);
+    setQrCode(null);
+  };
+
   // Initial data fetch on mount based on role
   useEffect(() => {
     (async () => {
@@ -524,6 +563,12 @@ export default function UnifiedDashboard() {
           >  
               Scan QR Code
           </button>
+          <button
+            onClick={() => navigate('/all-parcels')}
+            className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded"
+          >
+            View All Parcels
+          </button>
 
          <QRCodeScanner
            isOpen={scannerOpen}
@@ -618,6 +663,7 @@ export default function UnifiedDashboard() {
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Timeline</th>
                   <th className="p-3 text-center">Tamper Alert</th>
+                  <th className="p-3 text-center">Veiw Route</th>
                 </tr>
               </thead>
               <tbody>
@@ -676,6 +722,14 @@ export default function UnifiedDashboard() {
                             Raise Alert
                           </button>
                         </td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleShowRoute(p.trackingId)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                          >
+                            View Route
+                          </button>
+                        </td>
                       </tr>
                     );
                   })
@@ -729,10 +783,16 @@ export default function UnifiedDashboard() {
           handlersMap={handlersMap}
         />
       )}
+
+      {showMap && routeData && (
+       <RouteMap
+         senderAddress={routeData.senderAddress}
+         deliveryAddress={routeData.deliveryAddress}
+         onClose={() => setShowMap(false)}
+        />
+       )}
       <Outlet />
     </div>
-        
-        
       </>
     );
   }
@@ -917,6 +977,8 @@ export default function UnifiedDashboard() {
                   <th className="p-3 border border-gray-700">Parcel Type</th>
                   <th className="p-3 border border-gray-700">Status</th>
                   <th className="p-3 border border-gray-700">Timeline</th>
+                  <th className="p-3 border border-gray-700">Route</th>
+                  <th className="p-3 border border-gray-700">Parrcel QR Code</th>
                 </tr>
               </thead>
               <tbody>
@@ -950,6 +1012,22 @@ export default function UnifiedDashboard() {
                         <span>View Timeline</span>
                       </button>
                     </td>
+                    <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleShowRoute(p.trackingId)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                          >
+                            View Route
+                          </button>
+                        </td>
+                        <td className="p-3 text-center">
+                        <button
+                          className="px-2 py-1 bg-blue-600 text-white rounded"
+                          onClick={() => openQRCodeModal(p.trackingId)}
+                        >
+                         Show QR Code
+                        </button>
+                        </td>
                   </tr>
                 ))}
                 {myParcels.length === 0 && (
@@ -999,10 +1077,7 @@ export default function UnifiedDashboard() {
               </button>
             </div>
           </div>
-        )}
-        
-        
-        
+        )}        
               {/* Timeline Modal */}
               {showTimeline && selectedTimeline && (
                 <TimelineModal
@@ -1010,12 +1085,19 @@ export default function UnifiedDashboard() {
                   onClose={() => setShowTimeline(false)}
                 />
               )}
+              {showMap && routeData && (
+                <RouteMap
+                 senderAddress={routeData.senderAddress}
+                 deliveryAddress={routeData.deliveryAddress}
+                 onClose={() => setShowMap(false)}
+                />
+              )}
+              {showQrModal && (
+                 <QRCodeModal qrCode={qrCode} onClose={closeQRCodeModal} />
+                )}
             </div>
-
-        
       </>
     );
   }
-
   return <div>Unauthorized or unknown role</div>;
 }

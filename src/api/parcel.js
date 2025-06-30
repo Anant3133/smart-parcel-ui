@@ -31,6 +31,15 @@ export async function getParcelsHandledByHandler() {
   return res.data;
 }
 
+export async function fetchQRCode(trackingId) {
+  const res = await axios.get(`${BASE}/qrcode/${trackingId}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  });
+  return res.data; 
+}
+
 export async function updateParcelStatus(trackingId, newStatus, location) {
   const res = await axios.post(
     `${HANDOVER_BASE}/log`,
