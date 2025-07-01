@@ -2,9 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
 import { FiUser } from 'react-icons/fi'; // Icon for profile
+import { getTokenPayload } from '../utils/token';
 
 export default function DashboardHeader({ title }) {
   const navigate = useNavigate();
+  const role = getTokenPayload()?.role;
+
+  if (!role) return null;
+  if (role === 'admin') return null;
 
   return (
     <div className="flex justify-between items-center mb-6">

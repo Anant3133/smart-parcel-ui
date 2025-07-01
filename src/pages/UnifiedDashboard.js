@@ -1,5 +1,5 @@
 // UnifiedDashboard.js
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { saveToken, getTokenPayload } from '../utils/token';
 import SenderDashboard from './SenderDashboard';
 import HandlerDashboard from './HandlerDashboard';
@@ -27,6 +27,9 @@ import QRCodeScanner from "../components/QRCodeScanner";
 import RouteMap from '../components/RouteMap';
 import { fetchRouteByTrackingId } from "../api/route";
 import QRCodeModal from '../components/QRCodeModal';
+import LocomotiveScroll from "locomotive-scroll";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,6 +41,8 @@ import {
   Legend,
 } from 'chart.js';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ArcElement, Tooltip, Legend);
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function UnifiedDashboard() {
   const [userRole, setUserRole] = useState(null);
@@ -386,38 +391,142 @@ export default function UnifiedDashboard() {
     setQrCode(null);
   };
 
+  //ripple effect
+  const [ripples, setRipples] = useState({});  
+  const scrollRef = useRef(null);
+
+  const handleClickRipple = useCallback(
+    (sectionId) => (e) => {
+      const section = e.currentTarget;
+      const rect = section.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const newRipple = { id: Date.now(), x, y };
+
+      setRipples((prev) => {
+        const sectionRipples = prev[sectionId] || [];
+        return {
+          ...prev,
+          [sectionId]: [...sectionRipples, newRipple],
+        };
+      });
+
+      setTimeout(() => {
+        setRipples((prev) => {
+          const sectionRipples = prev[sectionId] || [];
+          return {
+            ...prev,
+            [sectionId]: sectionRipples.filter((r) => r.id !== newRipple.id),
+          };
+        });
+      }, 700);
+    },
+    []
+  );
+
+  const renderRipples = (sectionId) => {
+    const sectionRipples = ripples[sectionId] || [];
+    return sectionRipples.map(({ id, x, y }) => (
+      <span key={id} className="ripple" style={{ top: y, left: x }} />
+    ));
+  };
+
   // Initial data fetch on mount based on role
   useEffect(() => {
-    (async () => {
-      const payload = getTokenPayload();
-      if (!payload?.role) return;
-      const role = payload.role.toLowerCase();
-      setUserRole(role);
-      try {
-        if (role === 'admin') {
-          const parcelData = await fetchParcels();
-          const userData = await fetchUsers();
-          const alertData = await fetchAlerts();
-          setParcels(parcelData);
-          setUserCount(userData.length);
-          setHandlerCount(userData.filter(u => u.role === 'Handler').length);
-          setAlertCount(alertData.length);
-          setLatestAlerts(alertData.slice(0, 5));
-        } else if (role === 'handler') {
-          const data = await getParcelsHandledByHandler();
-          
-          setParcels(data);
-          
-        } else if (role === 'sender') {
-          await fetchSenderParcels();
+  let scrollInstance = null;
+
+  (async () => {
+    const payload = getTokenPayload();
+    if (!payload?.role) return;
+    const role = payload.role.toLowerCase();
+    setUserRole(role);
+    try {
+      if (role === 'admin') {
+        const parcelData = await fetchParcels();
+        const userData = await fetchUsers();
+        const alertData = await fetchAlerts();
+
+        setParcels(parcelData);
+        setUserCount(userData.length);
+        setHandlerCount(userData.filter(u => u.role === 'Handler').length);
+        setAlertCount(alertData.length);
+        setLatestAlerts(alertData.slice(0, 5));
+      } else if (role === 'handler') {
+        const data = await getParcelsHandledByHandler();
+        setParcels(data);
+      } else if (role === 'sender') {
+        await fetchSenderParcels();
+
+        // Initialize LocomotiveScroll for sender
+        if (scrollRef.current) {
+          scrollInstance = new LocomotiveScroll({
+            el: scrollRef.current,
+            smooth: true,
+            multiplier: 1.0,
+            smartphone: { smooth: true },
+            tablet: { smooth: true },
+          });
+
+          // Connect ScrollTrigger with LocomotiveScroll
+          ScrollTrigger.scrollerProxy(scrollRef.current, {
+            scrollTop(value) {
+              if (arguments.length) {
+                scrollInstance.scrollTo(value, 0, 0);
+              } else {
+                return scrollInstance.scroll.instance.scroll.y;
+              }
+            },
+            getBoundingClientRect() {
+              return {
+                top: 0,
+                left: 0,
+                width: window.innerWidth,
+                height: window.innerHeight,
+              };
+            },
+            pinType: scrollRef.current.style.transform ? 'transform' : 'fixed',
+          });
+
+          scrollInstance.on('scroll', ScrollTrigger.update);
+          ScrollTrigger.addEventListener('refresh', () => scrollInstance.update());
+          ScrollTrigger.refresh();
+
+          // GSAP reveal animations
+          gsap.utils.toArray('.reveal').forEach((el) => {
+            gsap.fromTo(
+              el,
+              { autoAlpha: 0, y: 50 },
+              {
+                duration: 1,
+                autoAlpha: 1,
+                y: 0,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: el,
+                  scroller: scrollRef.current,
+                  start: 'top 80%',
+                  end: 'bottom 20%',
+                  toggleActions: 'play none none reverse',
+                },
+              }
+            );
+          });
         }
-      } catch (err) {
-        toast.error('Failed to fetch role-specific data');
-      } finally {
-        setLoading(false);
       }
-    })();
-  }, []);
+    } catch (err) {
+      toast.error('Failed to fetch role-specific data');
+    } finally {
+      setLoading(false);
+    }
+  })();
+
+  return () => {
+    if (scrollInstance) {
+      scrollInstance.destroy();
+      ScrollTrigger.killAll();
+    }
+  };
+}, []);
 
   // Render role-based dashboards
 
@@ -425,10 +534,10 @@ export default function UnifiedDashboard() {
 
   if (userRole === 'admin') {
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <AdminSidebar activePage={adminActivePage} onChangePage={setAdminActivePage} />
       <div className="flex-1 flex flex-col">
-        <DashboardHeader title="Admin Dashboard" />
+        
         <main className="flex-1 p-6 overflow-auto">
           {adminActivePage === 'dashboard' && (
             <>
@@ -996,37 +1105,41 @@ export default function UnifiedDashboard() {
                     <td className="p-3 border border-gray-700">{p.parcelCategory}</td>
                     <td className="p-3 border border-gray-700">
                       <button
-                        onClick={() => handleShowStatus(p.trackingId)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded flex items-center justify-center space-x-1 transition"
+                       onClick={() => handleShowStatus(p.trackingId)}
+                       className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800"
                       >
-                        <FiAlertCircle size={18} />
-                        <span>Show Status</span>
+                      <span className="relative px-4 py-2 flex items-center space-x-1 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                          <FiAlertCircle size={18} />
+                       <span>Show Status</span>
+                      </span>
                       </button>
                     </td>
                     <td className="p-3 border border-gray-700 flex items-center justify-center">
-                      <button
-                        onClick={() => handleShowTimeline(p.trackingId)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded flex items-center justify-center space-x-1 transition"
-                      >
-                        <FiClock size={18} />
-                        <span>View Timeline</span>
-                      </button>
+                       <button 
+                          onClick={() => handleShowTimeline(p.trackingId)}
+                         class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-teal-300 to-lime-300 group-hover:from-teal-300 group-hover:to-lime-300 dark:text-white dark:hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-lime-800">
+                         <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                           View Timeline
+                         </span>
+                       </button>
                     </td>
-                    <td className="p-3 text-center">
-                          <button
-                            onClick={() => handleShowRoute(p.trackingId)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                          >
-                            View Route
-                          </button>
+                    <td className="p-3 border border-gray-700 text-centre">
+                      <button 
+                        onClick={() => handleShowRoute(p.trackingId)}
+                        class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
+                        <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                           View Route
+                        </span>
+                      </button>
                         </td>
-                        <td className="p-3 text-center">
-                        <button
-                          className="px-2 py-1 bg-blue-600 text-white rounded"
-                          onClick={() => openQRCodeModal(p.trackingId)}
-                        >
-                         Show QR Code
-                        </button>
+                        <td className="p-3 border border-gray-700 flex items-center justify-center">
+                          <button 
+                           onClick={() => openQRCodeModal(p.trackingId)}
+                           class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+                             <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                               Show QR Code
+                             </span>
+                          </button>
                         </td>
                   </tr>
                 ))}

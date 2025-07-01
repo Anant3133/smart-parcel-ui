@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AllParcelsList from './pages/AllParcelsList';
+import AnimatedPlayground from './pages/AnimatedPlayground';
 
 import UnifiedDashboard from './pages/UnifiedDashboard';
 
@@ -52,6 +53,9 @@ function App() {
 
         {/* All Parcels List */}
         <Route path="/all-parcels" element={<AllParcelsList />} />
+        
+        {/* Animated Playground */}
+         <Route path="/playground" element={<AnimatedPlayground />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" />} />

@@ -1,0 +1,26 @@
+/* src/styles/background.css */
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+
+  /* Old browsers fallback */
+  background: #191d1e;
+
+  /* Gradient for different browsers */
+  background: -moz-linear-gradient(0deg, #191d1e 50%, #283139 100%);
+  background: -webkit-gradient(linear, left top, right bottom, color-stop(50%, #191d1e), color-stop(100%, #283139));
+  background: -webkit-linear-gradient(0deg, #191d1e 50%, #283139 100%);
+  background: -o-linear-gradient(0deg, #191d1e 50%, #283139 100%);
+  background: -ms-linear-gradient(0deg, #191d1e 50%, #283139 100%);
+  background: linear-gradient(0deg, #191d1e 50%, #283139 100%);
+
+  /* For older IE */
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#191d1e', endColorstr='#283139', GradientType=1);
+
+  background-attachment: fixed;
+}
