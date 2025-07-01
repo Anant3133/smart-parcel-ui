@@ -636,7 +636,7 @@ export default function UnifiedDashboard() {
             Location
             <input
               type="text"
-              placeholder="Enter Current Location"
+              placeholder="Enter Delivery Address"
               value={location}
               onChange={e => setLocation(e.target.value)}
               className="p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -666,16 +666,14 @@ export default function UnifiedDashboard() {
           >
             Submit Handover
           </button>
-          <button
-             onClick={() => setScannerOpen(true)}
-             className="mt-4 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-semibold"
-          >  
-              Scan QR Code
+          <button type="button"
+            onClick={() => setScannerOpen(true)}
+            className="text-gray-900 bg-gradient-to-r from-lime-200 via-lime-400 to-lime-500 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-lime-300 dark:focus:ring-lime-800 shadow-lg shadow-lime-500/50 dark:shadow-lg dark:shadow-lime-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                Scan QR Code
           </button>
-          <button
-            onClick={() => navigate('/all-parcels')}
-            className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded"
-          >
+          <button type="button" 
+              onClick={() => navigate('/all-parcels')}
+              className="text-white bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-pink-300 dark:focus:ring-pink-800 shadow-lg shadow-pink-500/50 dark:shadow-lg dark:shadow-pink-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
             View All Parcels
           </button>
 
@@ -768,7 +766,7 @@ export default function UnifiedDashboard() {
                 <tr className="border-b border-gray-700">
                   <th className="p-3 text-left">Tracking ID</th>
                   <th className="p-3 text-left">Recipient</th>
-                  <th className="p-3 text-left">Location</th>
+                  <th className="p-3 text-left">Delivery Address</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Timeline</th>
                   <th className="p-3 text-center">Tamper Alert</th>
@@ -802,41 +800,34 @@ export default function UnifiedDashboard() {
                         <td className="p-3">{p.recipientName || 'N/A'}</td>
                         <td className="p-3">{p.currentLocation || 'N/A'}</td>
                         <td className="p-3 text-center">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
-                            {p.status || 'Unknown'}
-                          </span>
-                          <button
-                            className="ml-2 bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded text-xs"
+                          <button type="button" 
                             onClick={() => handleShowStatus(tracking)}
                             title="View Status Progress"
-                          >
-                            Show Status
+                            className="text-white bg-gradient-to-r from-green-400 via-green-500 to-green-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                           Show Status
                           </button>
                         </td>
                         <td className="p-3 text-center">
-                          <button
-                            className="text-indigo-400 underline text-sm"
+                          <button type="button"
                             onClick={() => handleShowTimeline(tracking)}
-                            title="View Timeline"
-                          >
-                            View Timeline
+                            title="View Timeline" 
+                            className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                              View Timeline
                           </button>
                         </td>
                         <td className="p-3 text-center">
-                          <button
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                          <button type="button" 
                             onClick={() => handleTamper(tracking)}
                             title="Raise Tamper Alert"
-                          >
-                            Raise Alert
+                            className="text-white bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 shadow-lg shadow-red-500/50 dark:shadow-lg dark:shadow-red-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                              Raise Alert
                           </button>
                         </td>
                         <td className="p-3 text-center">
-                          <button
-                            onClick={() => handleShowRoute(p.trackingId)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                          >
-                            View Route
+                          <button type="button" 
+                             onClick={() => handleShowRoute(p.trackingId)}
+                             className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                               View Route
                           </button>
                         </td>
                       </tr>

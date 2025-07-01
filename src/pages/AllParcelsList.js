@@ -130,12 +130,13 @@ export default function AllParcelsList() {
           All Parcels List
         </h1>
         <button
-              onClick={handleReturnToDashboard}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow-md transition-transform transform hover:scale-105"
-            >
-              <FiArrowLeftCircle size={18} />
-              Return to Dashboard
-            </button>
+          onClick={handleReturnToDashboard}
+          className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-teal-300 to-lime-300 group-hover:from-teal-300 group-hover:to-lime-300 dark:text-white dark:hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-lime-800"
+        >
+          <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+             Return to Dashboard
+          </span>
+        </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {[
@@ -241,10 +242,9 @@ export default function AllParcelsList() {
                   {p.status ?? p.Status ?? 'Unknown'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => openQRCodeModal(p.trackingId ?? p.TrackingId)}
-                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
-                  >
+                  <button type="button" 
+                     onClick={() => openQRCodeModal(p.trackingId ?? p.TrackingId)}
+                     className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
                     Show QR
                   </button>
                 </td>
