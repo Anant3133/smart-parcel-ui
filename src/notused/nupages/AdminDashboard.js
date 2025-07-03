@@ -45,7 +45,6 @@ export default function AdminDashboard() {
   const total = parcels.length;
   const delivered = parcels.filter(p => (p.status ?? '').toLowerCase() === 'delivered').length;
   const inTransit = parcels.filter(p => ['shipped', 'out for delivery', 'packed'].includes((p.status ?? '').toLowerCase())).length;
-  const received = parcels.filter(p => (p.status ?? '').toLowerCase() === 'received').length;
 
   const chartData = {
     labels: ['Received', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'],

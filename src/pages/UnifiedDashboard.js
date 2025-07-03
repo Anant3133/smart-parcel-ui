@@ -1,11 +1,7 @@
 // UnifiedDashboard.js
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { saveToken, getTokenPayload } from '../utils/token';
-import SenderDashboard from './SenderDashboard';
-import HandlerDashboard from './HandlerDashboard';
-import AdminLayout from '../components/AdminLayout';
-import { Outlet, Routes, Route, useNavigate } from 'react-router-dom';
-import AdminDashboard from './AdminDashboard';
+import React, { useEffect, useState, useMemo } from 'react';
+import { getTokenPayload } from '../utils/token';
+import { Outlet, useNavigate } from 'react-router-dom';
 import AdminUsers from './AdminUsers';
 import AdminParcels from './AdminParcels';
 import AdminTamperAlerts from './AdminTamperAlerts';
@@ -15,8 +11,8 @@ import { fetchParcelStatusLogs } from '../api/status';
 import DashboardHeader from '../components/DashboardHeader';
 import TimelineModal from '../components/TimelineModal';
 import { fetchTimeline } from '../api/timeline';
-import { FiPackage, FiClock, FiCheckCircle, FiAlertCircle, FiMapPin, FiRefreshCcw, FiAlertTriangle, FiTruck, FiUser, FiUsers, FiBarChart2 } from 'react-icons/fi';
-import { toast, ToastContainer } from 'react-toastify';
+import { FiPackage, FiClock, FiCheckCircle, FiAlertCircle, FiAlertTriangle, FiTruck, FiUser, FiUsers, FiBarChart2, FiWatch, FiCompass, FiMap, FiCodesandbox, FiCamera } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Toaster } from 'react-hot-toast';
 import { logHandover } from '../api/handover';
@@ -27,7 +23,6 @@ import QRCodeScanner from "../components/QRCodeScanner";
 import RouteMap from '../components/RouteMap';
 import { fetchRouteByTrackingId } from "../api/route";
 import QRCodeModal from '../components/QRCodeModal';
-import LocomotiveScroll from "locomotive-scroll";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -83,7 +78,6 @@ export default function UnifiedDashboard() {
   const statusFlow = ['Received', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
 
   //QRCodeScanner
-  const [showQrScanner, setShowQrScanner] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   // const [trackingId, setTrackingId] = useState('');
   // const [location, setLocation] = useState('');
@@ -207,7 +201,6 @@ export default function UnifiedDashboard() {
   const total = parcels.length;
   const delivered = parcels.filter(p => (p.status ?? '').toLowerCase() === 'delivered').length;
   const inTransit = parcels.filter(p => ['shipped', 'out for delivery', 'packed'].includes((p.status ?? '').toLowerCase())).length;
-  const received = parcels.filter(p => (p.status ?? '').toLowerCase() === 'received').length;
 
   // Sender: Create Parcel
   const handleCreate = async () => {
@@ -259,16 +252,6 @@ export default function UnifiedDashboard() {
     } catch (error) {
       console.error('Failed to fetch handled parcels:', error);
       toast.error('Failed to fetch parcels');
-    }
-  };
-
-  // Handler: Fetch all users (for handlers)
-  const fetchAllUsers = async () => {
-    try {
-      const u = await fetchUsers();
-      setUsers(u);
-    } catch {
-      toast.error('Failed to load users');
     }
   };
 
@@ -391,45 +374,6 @@ export default function UnifiedDashboard() {
     setQrCode(null);
   };
 
-  //ripple effect
-  const [ripples, setRipples] = useState({});  
-  const scrollRef = useRef(null);
-
-  const handleClickRipple = useCallback(
-    (sectionId) => (e) => {
-      const section = e.currentTarget;
-      const rect = section.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const newRipple = { id: Date.now(), x, y };
-
-      setRipples((prev) => {
-        const sectionRipples = prev[sectionId] || [];
-        return {
-          ...prev,
-          [sectionId]: [...sectionRipples, newRipple],
-        };
-      });
-
-      setTimeout(() => {
-        setRipples((prev) => {
-          const sectionRipples = prev[sectionId] || [];
-          return {
-            ...prev,
-            [sectionId]: sectionRipples.filter((r) => r.id !== newRipple.id),
-          };
-        });
-      }, 700);
-    },
-    []
-  );
-
-  const renderRipples = (sectionId) => {
-    const sectionRipples = ripples[sectionId] || [];
-    return sectionRipples.map(({ id, x, y }) => (
-      <span key={id} className="ripple" style={{ top: y, left: x }} />
-    ));
-  };
 
   // Initial data fetch on mount based on role
   useEffect(() => {
@@ -456,62 +400,6 @@ export default function UnifiedDashboard() {
         setParcels(data);
       } else if (role === 'sender') {
         await fetchSenderParcels();
-
-        // Initialize LocomotiveScroll for sender
-        if (scrollRef.current) {
-          scrollInstance = new LocomotiveScroll({
-            el: scrollRef.current,
-            smooth: true,
-            multiplier: 1.0,
-            smartphone: { smooth: true },
-            tablet: { smooth: true },
-          });
-
-          // Connect ScrollTrigger with LocomotiveScroll
-          ScrollTrigger.scrollerProxy(scrollRef.current, {
-            scrollTop(value) {
-              if (arguments.length) {
-                scrollInstance.scrollTo(value, 0, 0);
-              } else {
-                return scrollInstance.scroll.instance.scroll.y;
-              }
-            },
-            getBoundingClientRect() {
-              return {
-                top: 0,
-                left: 0,
-                width: window.innerWidth,
-                height: window.innerHeight,
-              };
-            },
-            pinType: scrollRef.current.style.transform ? 'transform' : 'fixed',
-          });
-
-          scrollInstance.on('scroll', ScrollTrigger.update);
-          ScrollTrigger.addEventListener('refresh', () => scrollInstance.update());
-          ScrollTrigger.refresh();
-
-          // GSAP reveal animations
-          gsap.utils.toArray('.reveal').forEach((el) => {
-            gsap.fromTo(
-              el,
-              { autoAlpha: 0, y: 50 },
-              {
-                duration: 1,
-                autoAlpha: 1,
-                y: 0,
-                ease: 'power3.out',
-                scrollTrigger: {
-                  trigger: el,
-                  scroller: scrollRef.current,
-                  start: 'top 80%',
-                  end: 'bottom 20%',
-                  toggleActions: 'play none none reverse',
-                },
-              }
-            );
-          });
-        }
       }
     } catch (err) {
       toast.error('Failed to fetch role-specific data');
@@ -611,15 +499,23 @@ export default function UnifiedDashboard() {
     return (
       <>
         <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white p-6 flex flex-col gap-8">
-      <Toaster position="top-right" />
-
-      <DashboardHeader title="Handler Dashboard" />
+         <Toaster position="top-right" />
+         <div className="flex justify-between items-center mb-8">
+                <h2 className="text-4xl font-extrabold text-white flex items-center space-x-3">
+                  <FiTruck size={36} className="text-green-400" />
+                  <span>Handler Dashboard</span>
+                </h2>
+                <DashboardHeader title="" />
+              </div>
 
       {/* Grid Container */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* --- Left Column: Handover Log Form --- */}
         <section className="bg-gray-850 bg-opacity-60 backdrop-blur-md p-6 rounded-lg shadow-lg flex flex-col gap-4">
-          <h3 className="text-2xl font-semibold mb-4">Log Parcel Handover</h3>
+          <h3 className="text-2xl font-semibold mb-4 flex items-center space-x-3 gap-2">
+            <FiCodesandbox size={26} className="text-purple-900"  />
+            Log Parcel Handover
+            </h3>
 
           <label className="flex flex-col gap-1 text-gray-300 font-semibold">
             Tracking ID
@@ -783,16 +679,6 @@ export default function UnifiedDashboard() {
                 ) : (
                   filteredParcels.map((p) => {
                     const tracking = p.ParcelTrackingId || p.trackingId || p.trackingID;
-                    const statusLower = (p.status ?? '').toLowerCase();
-
-                    // Status color badge
-                    const statusColor = {
-                      received: 'bg-gray-600',
-                      packed: 'bg-yellow-600',
-                      shipped: 'bg-blue-600',
-                      'out for delivery': 'bg-indigo-600',
-                      delivered: 'bg-green-600',
-                    }[statusLower] || 'bg-gray-600';
 
                     return (
                       <tr key={tracking} className="hover:bg-gray-800 transition">
@@ -803,15 +689,17 @@ export default function UnifiedDashboard() {
                           <button type="button" 
                             onClick={() => handleShowStatus(tracking)}
                             title="View Status Progress"
-                            className="text-white bg-gradient-to-r from-green-400 via-green-500 to-green-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
-                           Show Status
+                            className="text-white bg-gradient-to-r from-green-400 via-green-500 to-green-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 flex items-center gap-2">
+                             <FiCompass  size={18} />
+                             Show Status
                           </button>
                         </td>
                         <td className="p-3 text-center">
                           <button type="button"
                             onClick={() => handleShowTimeline(tracking)}
                             title="View Timeline" 
-                            className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                            className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 flex items-center gap-2">
+                              <FiWatch  size={18} />
                               View Timeline
                           </button>
                         </td>
@@ -819,14 +707,16 @@ export default function UnifiedDashboard() {
                           <button type="button" 
                             onClick={() => handleTamper(tracking)}
                             title="Raise Tamper Alert"
-                            className="text-white bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 shadow-lg shadow-red-500/50 dark:shadow-lg dark:shadow-red-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                            className="text-white bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 shadow-lg shadow-red-500/50 dark:shadow-lg dark:shadow-red-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 flex items-center gap-2 ">
+                              <FiAlertTriangle size={18} />
                               Raise Alert
                           </button>
                         </td>
                         <td className="p-3 text-center">
                           <button type="button" 
                              onClick={() => handleShowRoute(p.trackingId)}
-                             className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                             className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 flex items-center gap-2">
+                               <FiMap size={18} />
                                View Route
                           </button>
                         </td>
@@ -900,7 +790,8 @@ export default function UnifiedDashboard() {
   if (userRole === 'sender') {
     return (
       <>
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 p-8 font-sans">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 p-8 font-sans "
+             style={{ backgroundImage: 'url(/senderbg.png)' }}>
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-4xl font-extrabold text-white flex items-center space-x-3">
                   <FiPackage size={36} className="text-green-400" />
@@ -939,9 +830,11 @@ export default function UnifiedDashboard() {
                   <Bar data={senderChartData} options={senderChartOptions} height={130} />
                 </div>
               </div>
-        
+
+       <div className="flex flex-col lg:flex-row gap-6 max-w-full mx-auto px-4 mb-12 min-h-[450px]">
+              {/* Left side: Create Parcel Form container */}
               {/* Create Parcel Form */}
-        <div className="max-w-3xl mx-auto bg-gray-900 rounded-xl shadow-xl p-8 mb-12 border border-gray-700">
+        <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_45%]">
           <h3 className="text-2xl font-semibold mb-6 text-white">Create Parcel</h3>
           <div className="space-y-5">
             <input
@@ -1034,117 +927,136 @@ export default function UnifiedDashboard() {
             )}
           </div>
         </div>
+
+       <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_55%] flex items-center justify-center">
+           {/* Put your LineChart component here */}
+      </div>
+    </div> 
         
-        
-              {/* Parcels Table */}
-        <div className="max-w-7xl mx-auto bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-700 overflow-x-auto">
-          <h3 className="text-2xl font-bold mb-5 text-white flex items-center space-x-2">
-            <FiPackage className="text-green-400" />
-            <span>My Parcels</span>
-          </h3>
-          {loadingParcels ? (
-            <div className="flex justify-center py-20">
-              <svg
-                className="animate-spin h-12 w-12 text-green-400"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-              </svg>
-            </div>
-          ) : (
-            <table className="min-w-full border border-gray-700 text-sm text-gray-300 rounded-lg overflow-hidden">
-              <thead>
-                <tr className="bg-gray-800 text-gray-200 uppercase text-xs select-none">
-                  <th className="p-3 border border-gray-700">Tracking ID</th>
-                  <th className="p-3 border border-gray-700">Recipient</th>
-                  <th className="p-3 border border-gray-700">Delivery Address</th>
-                  <th className="p-3 border border-gray-700">Sender Address</th>
-                  <th className="p-3 border border-gray-700">Weight (kg)</th>
-                  <th className="p-3 border border-gray-700">Parcel Type</th>
-                  <th className="p-3 border border-gray-700">Status</th>
-                  <th className="p-3 border border-gray-700">Timeline</th>
-                  <th className="p-3 border border-gray-700">Route</th>
-                  <th className="p-3 border border-gray-700">Parrcel QR Code</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myParcels.map((p) => (
-                  <tr
-                    key={p.trackingId}
-                    className="hover:bg-gray-800 cursor-pointer transition-colors"
-                    title="Click buttons to view status or timeline"
-                  >
-                    <td className="p-3 border border-gray-700 font-mono text-xs">{p.trackingId}</td>
-                    <td className="p-3 border border-gray-700">{p.recipientName}</td>
-                    <td className="p-3 border border-gray-700">{p.deliveryAddress}</td>
-                    <td className="p-3 border border-gray-700">{p.senderAddress}</td>
-                    <td className="p-3 border border-gray-700">{p.weight}</td>
-                    <td className="p-3 border border-gray-700">{p.parcelCategory}</td>
-                    <td className="p-3 border border-gray-700">
-                      <button
-                       onClick={() => handleShowStatus(p.trackingId)}
-                       className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800"
-                      >
-                      <span className="relative px-4 py-2 flex items-center space-x-1 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                          <FiAlertCircle size={18} />
-                       <span>Show Status</span>
-                      </span>
-                      </button>
-                    </td>
-                    <td className="p-3 border border-gray-700 flex items-center justify-center">
-                       <button 
-                          onClick={() => handleShowTimeline(p.trackingId)}
-                         class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-teal-300 to-lime-300 group-hover:from-teal-300 group-hover:to-lime-300 dark:text-white dark:hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-lime-800">
-                         <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                           View Timeline
-                         </span>
-                       </button>
-                    </td>
-                    <td className="p-3 border border-gray-700 text-centre">
-                      <button 
-                        onClick={() => handleShowRoute(p.trackingId)}
-                        class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
-                        <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                           View Route
-                        </span>
-                      </button>
-                        </td>
-                        <td className="p-3 border border-gray-700 flex items-center justify-center">
-                          <button 
-                           onClick={() => openQRCodeModal(p.trackingId)}
-                           class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
-                             <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                               Show QR Code
-                             </span>
-                          </button>
-                        </td>
-                  </tr>
-                ))}
-                {myParcels.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="text-center p-6 text-gray-500 italic">
-                      No parcels found. Create one above!
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+             {/* Parcels Table */}
+<div className="w-full bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-700 overflow-x-auto">
+  <h3 className="text-2xl font-bold mb-5 text-white flex items-center space-x-2">
+    <FiPackage className="text-green-400" />
+    <span>My Parcels</span>
+  </h3>
+
+  {loadingParcels ? (
+    <div className="flex justify-center py-20">
+      <svg
+        className="animate-spin h-12 w-12 text-green-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        ></path>
+      </svg>
+    </div>
+  ) : (
+    <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <table className="w-full text-sm text-left text-gray-300 border border-gray-700">
+        <thead className="text-xs uppercase bg-gray-800 text-gray-200">
+          <tr>
+            <th className="px-6 py-3 border border-gray-700">Tracking ID</th>
+            <th className="px-6 py-3 border border-gray-700">Recipient</th>
+            <th className="px-6 py-3 border border-gray-700">Delivery Address</th>
+            <th className="px-6 py-3 border border-gray-700">Sender Address</th>
+            <th className="px-6 py-3 border border-gray-700">Weight (kg)</th>
+            <th className="px-6 py-3 border border-gray-700">Parcel Type</th>
+            <th className="px-6 py-3 border border-gray-700">Status</th>
+            <th className="px-6 py-3 border border-gray-700">Timeline</th>
+            <th className="px-6 py-3 border border-gray-700">Route</th>
+            <th className="px-6 py-3 border border-gray-700">Parcel QR Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...myParcels].reverse().map((p) => (
+            <tr
+              key={p.trackingId}
+              className="hover:bg-gray-800 transition-colors cursor-pointer"
+              title="Click buttons to view status or timeline"
+            >
+              <td className="px-6 py-4 border border-gray-700 font-mono text-xs">{p.trackingId}</td>
+              <td className="px-6 py-4 border border-gray-700">{p.recipientName}</td>
+              <td className="px-6 py-4 border border-gray-700">{p.deliveryAddress}</td>
+              <td className="px-6 py-4 border border-gray-700">{p.senderAddress}</td>
+              <td className="px-6 py-4 border border-gray-700">{p.weight}</td>
+              <td className="px-6 py-4 border border-gray-700">{p.parcelCategory}</td>
+
+              {/* Show Status Button */}
+              <td className="px-6 py-4 border border-gray-700">
+                <button
+                  onClick={() => handleShowStatus(p.trackingId)}
+                  className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white text-white focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800"
+                >
+                  <span className="relative px-4 py-2 flex items-center space-x-1 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
+                    <FiAlertCircle size={18} />
+                    <span>Show Status</span>
+                  </span>
+                </button>
+              </td>
+
+              {/* View Timeline Button */}
+              <td className="px-6 py-4 border border-gray-700 text-center">
+                <button
+                  onClick={() => handleShowTimeline(p.trackingId)}
+                  className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-teal-300 to-lime-300 group-hover:from-teal-300 group-hover:to-lime-300 text-white focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-lime-800"
+                >
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
+                    View Timeline
+                  </span>
+                </button>
+              </td>
+
+              {/* View Route Button */}
+              <td className="px-6 py-4 border border-gray-700 text-center">
+                <button
+                  onClick={() => handleShowRoute(p.trackingId)}
+                  className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
+                >
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
+                    View Route
+                  </span>
+                </button>
+              </td>
+
+              {/* QR Code Button */}
+              <td className="px-6 py-4 border border-gray-700 text-center">
+                <button
+                  onClick={() => openQRCodeModal(p.trackingId)}
+                  className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                >
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
+                    Show QR Code
+                  </span>
+                </button>
+              </td>
+            </tr>
+          ))}
+          {myParcels.length === 0 && (
+            <tr>
+              <td colSpan={10} className="text-center px-6 py-6 text-gray-500 italic">
+                No parcels found. Create one above!
+              </td>
+            </tr>
           )}
-        </div>
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+
         
         {showStatusPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">

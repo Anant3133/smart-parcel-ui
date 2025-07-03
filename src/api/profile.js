@@ -20,3 +20,25 @@ export async function updateProfile(data) {
   });
   return res.data;
 }
+
+// Upload profile picture
+export const uploadProfilePicture = async (imageUrl) => {
+  const res = await fetch('/api/profile/upload-profile-picture', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageUrl }),
+  });
+  if (!res.ok) throw new Error('Upload failed');
+  return await res.json();
+};
+
+// Upload banner image
+export const uploadBannerImage = async (imageUrl) => {
+  const res = await fetch('/api/profile/upload-banner-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageUrl }),
+  });
+  if (!res.ok) throw new Error('Upload failed');
+  return await res.json();
+};

@@ -5,7 +5,6 @@ import QRCodeModal from '../components/QRCodeModal';
 import { useNavigate } from 'react-router-dom';
 import { FiTruck, FiUser, FiClipboard, FiPieChart } from 'react-icons/fi';
 import { Pie } from 'react-chartjs-2';
-import { FiArrowLeftCircle } from 'react-icons/fi';
 import { getTokenPayload } from '../utils/token';  
 
 

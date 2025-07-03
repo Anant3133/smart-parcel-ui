@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { logHandover } from '../api/handover';
 import { getParcelsHandledByHandler } from '../api/parcel';
-import { fetchUsers } from '../api/admin';
 import DashboardHeader from '../components/DashboardHeader';
 import TimelineModal from '../components/TimelineModal';
 import { fetchTimeline } from '../api/timeline';
@@ -9,10 +8,10 @@ import { fetchParcelStatusLogs } from '../api/status';
 import { raiseTamperAlert } from '../api/tamper';
 import { Pie } from 'react-chartjs-2';
 import toast, { Toaster } from 'react-hot-toast';
-import { FiRefreshCcw, FiAlertTriangle, FiClock, FiPackage, FiMapPin } from 'react-icons/fi';
+import { FiAlertTriangle, FiClock, FiPackage } from 'react-icons/fi';
 import { Outlet } from 'react-router-dom';  
 import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+
 
 import {
   Chart as ChartJS,
@@ -72,15 +71,6 @@ export default function HandlerDashboard() {
     }
   };
 
-  // Fetch Users
-  const fetchAllUsers = async () => {
-    try {
-      const u = await fetchUsers();
-      setUsers(u);
-    } catch {
-      toast.error('Failed to load users');
-    }
-  };
 
   // Form submission handler
   const handleLogHandover = async () => {

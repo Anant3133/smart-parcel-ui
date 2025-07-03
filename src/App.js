@@ -8,7 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AllParcelsList from './pages/AllParcelsList';
-import AnimatedPlayground from './pages/AnimatedPlayground';
+import AnimatedPlayground from './notused/nupages/AnimatedPlayground';
 
 import UnifiedDashboard from './pages/UnifiedDashboard';
 

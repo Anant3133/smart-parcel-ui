@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import LocomotiveScroll from "locomotive-scroll";
 import "locomotive-scroll/dist/locomotive-scroll.css";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import ParticleBackground from "../components/ParticleBackground";
+//import ParticleBackground from "./src/components/ParticleBackground";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -164,7 +164,7 @@ export default function AnimatedPlayground() {
 
   return (
     <>
-      <ParticleBackground />
+      
 
       <div
         data-scroll-container
