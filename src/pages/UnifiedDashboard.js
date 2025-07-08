@@ -25,6 +25,9 @@ import { fetchRouteByTrackingId } from "../api/route";
 import QRCodeModal from '../components/QRCodeModal';
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-date-fns';
+import { motion } from 'framer-motion';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,6 +39,7 @@ import {
   Legend,
 } from 'chart.js';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ArcElement, Tooltip, Legend);
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -194,6 +198,9 @@ export default function UnifiedDashboard() {
       },
     }
   };
+
+    //admin line chart
+    const [parcelsOverTime, setParcelsOverTime] = useState([]);
 
   // --- Functions ---
 
@@ -374,8 +381,74 @@ export default function UnifiedDashboard() {
     setQrCode(null);
   };
 
+  //parcel time created 
+  const parcelsCreatedByDate = useMemo(() => {
+  if (!myParcels.length) return [];
 
-  // Initial data fetch on mount based on role
+  // Group parcels by date string yyyy-mm-dd
+  const grouped = myParcels.reduce((acc, parcel) => {
+    const createdAt = parcel.createdAt || parcel.CreatedAt; 
+    if (!createdAt) return acc;
+
+    const date = new Date(createdAt).toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Convert to array and sort ascending by date
+  return Object.entries(grouped)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}, [myParcels]);
+
+const parcelsCreatedChartData = {
+  labels: parcelsCreatedByDate.map(d => d.date),
+  datasets: [
+    {
+      label: 'Parcels Created',
+      data: parcelsCreatedByDate.map(d => d.count),
+      fill: false,
+      borderColor: '#4F46E5', // Indigo color
+      backgroundColor: '#4F46E5',
+      tension: 0.3,
+    }
+  ],
+};
+
+const parcelsCreatedChartOptions = {
+  scales: {
+    x: {
+      type: 'time',       // required for time scale
+      time: {
+        unit: 'day',
+        tooltipFormat: 'PPP',  // date-fns format, e.g. Jul 10, 2025
+        displayFormats: {
+          day: 'MMM d',
+        },
+      },
+      ticks: { color: 'white' },
+      grid: { color: '#374151' },
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { color: 'white', stepSize: 1 },
+      grid: { color: '#374151' },
+    },
+  },
+  plugins: {
+    legend: { labels: { color: 'white' } },
+    title: {
+      display: true,
+      text: 'Parcels Created Over Time',
+      color: 'white',
+      font: { size: 18 },
+    },
+  },
+  responsive: true,
+};
+
+
   useEffect(() => {
   let scrollInstance = null;
 
@@ -395,6 +468,24 @@ export default function UnifiedDashboard() {
         setHandlerCount(userData.filter(u => u.role === 'Handler').length);
         setAlertCount(alertData.length);
         setLatestAlerts(alertData.slice(0, 5));
+
+        // Compute parcelsOverTime from parcelData here
+        if (parcelData && parcelData.length > 0) {
+          const dayMap = {};
+          parcelData.forEach(p => {
+            const createdDate = p.createdAt || p.created_at || p.created;
+            if (!createdDate) return;
+            const day = new Date(createdDate).toISOString().slice(0, 10);
+            dayMap[day] = (dayMap[day] || 0) + 1;
+          });
+          const dayData = Object.keys(dayMap)
+            .sort()
+            .map(date => ({ date, count: dayMap[date] }));
+          setParcelsOverTime(dayData);
+        } else {
+          setParcelsOverTime([]);
+        }
+
       } else if (role === 'handler') {
         const data = await getParcelsHandledByHandler();
         setParcels(data);
@@ -416,6 +507,7 @@ export default function UnifiedDashboard() {
   };
 }, []);
 
+
   // Render role-based dashboards
 
   if (!userRole) return <div>Loading user role...</div>;
@@ -427,58 +519,133 @@ export default function UnifiedDashboard() {
       <div className="flex-1 flex flex-col">
         
         <main className="flex-1 p-6 overflow-auto">
-          {adminActivePage === 'dashboard' && (
-            <>
-              <h1 className="text-4xl font-bold mb-8">📊 Admin Dashboard</h1>
-              {loading ? (
-                      <p>Loading dashboard data...</p>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-                          {[
-                            { label: 'Total Parcels', value: total, icon: FiPackage, color: 'text-blue-400' },
-                            { label: 'Delivered', value: delivered, icon: FiTruck, color: 'text-green-400' },
-                            { label: 'In Transit', value: inTransit, icon: FiBarChart2, color: 'text-yellow-300' },
-                            { label: 'Total Users', value: userCount, icon: FiUsers, color: 'text-blue-300' },
-                            { label: 'Handlers', value: handlerCount, icon: FiUser, color: 'text-purple-300' },
-                            { label: 'Tamper Alerts', value: alertCount, icon: FiAlertCircle, color: 'text-red-400' }
-                          ].map(({ label, value, icon: Icon, color }) => (
-                            <div
-                              key={label}
-                              className="bg-gray-800 rounded-lg p-6 shadow-lg flex items-center gap-4 transition duration-300 ease-in-out hover:shadow-[0_0_20px_5px_rgba(255,255,255,0.1)] hover:scale-[1.03] cursor-pointer"
-                            >
-                              <Icon size={40} className={color} />
-                              <div>
-                                <h2 className="text-xl font-semibold">{label}</h2>
-                                <p className="text-3xl font-bold">{value}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-              
-                        {/* Bar Chart */}
-                        <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-12 max-w-4xl">
-                          <h2 className="text-xl font-bold mb-4">📦 Parcel Status Distribution</h2>
-                          <Bar data={adminChartData} options={adminChartOptions} />
-                        </div>
-              
-                        {latestAlerts.length > 0 && (
-                          <div className="bg-gray-800 p-6 rounded shadow max-w-4xl">
-                            <h2 className="text-xl font-bold mb-4 text-red-400">🚨 Recent Tamper Alerts</h2>
-                            <ul className="list-disc list-inside space-y-2 text-sm">
-                              {latestAlerts.map(alert => (
-                                <li key={alert.id ?? alert.parcelTrackingId}>
-                                  Parcel <strong>{alert.parcelTrackingId ?? 'Unknown'}</strong>: {alert.note ?? alert.message ?? 'No message'}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-            </>
-          )}
+         {adminActivePage === 'dashboard' && (
+  <>
+    <h1 className="text-4xl font-bold mb-10 tracking-wide">📊 Admin Dashboard</h1>
 
+    {loading ? (
+      <p className="text-center text-gray-400">Loading dashboard data...</p>
+    ) : (
+      <>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {[
+            { label: 'Total Parcels', value: total, icon: FiPackage, color: 'text-blue-400' },
+            { label: 'Delivered', value: delivered, icon: FiTruck, color: 'text-green-400' },
+            { label: 'In Transit', value: inTransit, icon: FiBarChart2, color: 'text-yellow-300' },
+            { label: 'Total Users', value: userCount, icon: FiUsers, color: 'text-blue-300' },
+            { label: 'Handlers', value: handlerCount, icon: FiUser, color: 'text-purple-300' },
+            { label: 'Tamper Alerts', value: alertCount, icon: FiAlertCircle, color: 'text-red-400' }
+          ].map(({ label, value, icon: Icon, color }) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255,255,255,0.15)' }}
+              className="bg-gray-800 rounded-lg p-6 flex items-center gap-5 cursor-default shadow-lg"
+            >
+              <Icon size={44} className={`${color} drop-shadow-md`} />
+              <div>
+                <h2 className="text-xl font-semibold tracking-wide">{label}</h2>
+                <p className="text-4xl font-extrabold mt-1">{value ?? '0'}</p>
+
+                {/* Progress bar for Delivered & In Transit */}
+                {(label === 'Delivered' || label === 'In Transit') && (
+                  <div className="mt-3 w-48 h-2 rounded-full bg-gray-700 overflow-hidden">
+                    <motion.div
+                      className={`h-2 rounded-full ${label === 'Delivered' ? 'bg-green-500' : 'bg-yellow-400'}`}
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: label === 'Delivered'
+                          ? `${total ? Math.round((delivered / total) * 100) : 0}%`
+                          : `${total ? Math.round((inTransit / total) * 100) : 0}%`
+                      }}
+                      transition={{ duration: 1.2 }}
+                    />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
+          <section className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold mb-6 tracking-wide">📦 Parcel Status Distribution</h2>
+            <Bar data={adminChartData} options={adminChartOptions} />
+          </section>
+
+          <section className="bg-gray-800 p-6 rounded-lg shadow-lg">
+  <h2 className="text-2xl font-bold mb-6 tracking-wide text-blue-400">📈 Parcels Over Time</h2>
+   <div className="w-full h-[500px]">
+  <Line
+    data={{
+      labels: parcelsOverTime.map(entry =>
+        new Date(entry.date).toLocaleDateString('default', { month: 'short', day: 'numeric' })
+      ),
+      datasets: [
+        {
+          label: 'Parcels',
+          data: parcelsOverTime.map(entry => entry.count),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          tension: 0.3,
+        },
+      ],
+    }}
+    options={{
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          ticks: { color: '#ccc' },
+          grid: { color: '#444' },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#ccc' },
+          grid: { color: '#444' },
+        },
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#fff' },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `Parcels: ${context.parsed.y}`,
+          },
+        },
+      },
+    }}
+    height={100}
+  />
+  </div>
+</section>
+        </div>
+
+        {/* Recent Tamper Alerts */}
+        {latestAlerts.length > 0 && (
+          <section className="bg-gray-800 p-6 rounded-lg shadow-lg width-full mx-auto">
+            <h2 className="text-2xl font-bold mb-4 text-red-400 tracking-wide">🚨 Recent Tamper Alerts</h2>
+            <ul className="list-disc list-inside space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700">
+              {latestAlerts.map(alert => (
+                <li key={alert.id ?? alert.parcelTrackingId} className="hover:bg-gray-700 p-2 rounded-md transition">
+                  <strong>Parcel {alert.parcelTrackingId ?? 'Unknown'}</strong>: {alert.note ?? alert.message ?? 'No message'}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </>
+    )}
+  </>
+)}
           {adminActivePage === 'users' && <AdminUsers />}
           {adminActivePage === 'parcels' && <AdminParcels />}
           {adminActivePage === 'tamper-alerts' && <AdminTamperAlerts />}
@@ -677,7 +844,7 @@ export default function UnifiedDashboard() {
                     </td>
                   </tr>
                 ) : (
-                  filteredParcels.map((p) => {
+                  [...filteredParcels].reverse().map((p) => {
                     const tracking = p.ParcelTrackingId || p.trackingId || p.trackingID;
 
                     return (
@@ -791,7 +958,7 @@ export default function UnifiedDashboard() {
     return (
       <>
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 p-8 font-sans "
-             style={{ backgroundImage: 'url(/senderbg.png)' }}>
+             style={{ backgroundImage: 'url(/senderbg3.jpg)' }}>
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-4xl font-extrabold text-white flex items-center space-x-3">
                   <FiPackage size={36} className="text-green-400" />
@@ -834,9 +1001,10 @@ export default function UnifiedDashboard() {
        <div className="flex flex-col lg:flex-row gap-6 max-w-full mx-auto px-4 mb-12 min-h-[450px]">
               {/* Left side: Create Parcel Form container */}
               {/* Create Parcel Form */}
-        <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_45%]">
+        <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_45%] ">
           <h3 className="text-2xl font-semibold mb-6 text-white">Create Parcel</h3>
-          <div className="space-y-5">
+          
+           <div className="flex justify-center items-center flex-col space-y-10">
             <input
               type="text"
               placeholder="Recipient Name"
@@ -928,9 +1096,15 @@ export default function UnifiedDashboard() {
           </div>
         </div>
 
-       <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_55%] flex items-center justify-center">
-           {/* Put your LineChart component here */}
+       <div className="bg-gray-900 rounded-xl shadow-xl p-8 border border-gray-700 flex-[0_0_55%] flex items-center justify-center min-h-[450px]">
+           <Line
+             key="parcelsCreatedChart"   // stable key
+             data={parcelsCreatedChartData}
+             options={parcelsCreatedChartOptions}            
+           />
+
       </div>
+      
     </div> 
         
              {/* Parcels Table */}
@@ -1013,8 +1187,9 @@ export default function UnifiedDashboard() {
                   onClick={() => handleShowTimeline(p.trackingId)}
                   className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-teal-300 to-lime-300 group-hover:from-teal-300 group-hover:to-lime-300 text-white focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-lime-800"
                 >
-                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
-                    View Timeline
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent flex items-center justify-center gap-2">
+                    <FiClock size={18} />
+                    <span>View Timeline</span>
                   </span>
                 </button>
               </td>
@@ -1025,8 +1200,9 @@ export default function UnifiedDashboard() {
                   onClick={() => handleShowRoute(p.trackingId)}
                   className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
                 >
-                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
-                    View Route
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent flex items-center justify-center gap-2">
+                    <FiMap size={18} />
+                    <span>View Route</span>
                   </span>
                 </button>
               </td>
@@ -1037,8 +1213,9 @@ export default function UnifiedDashboard() {
                   onClick={() => openQRCodeModal(p.trackingId)}
                   className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
                 >
-                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent">
-                    Show QR Code
+                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-gray-900 rounded-md group-hover:bg-transparent flex items-center justify-center gap-2">
+                    <FiCamera size={18} />
+                    <span>Show QR Code</span>
                   </span>
                 </button>
               </td>

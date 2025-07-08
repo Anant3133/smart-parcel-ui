@@ -53,12 +53,13 @@ export default function ProfilePage() {
 
       if (role === 'sender') {
         const parcels = await fetchMyParcels();
-        const delivered = parcels.filter(x => x.status === 'delivered').length;
-        const transit = parcels.filter(x => x.status !== 'delivered').length;
+        const delivered = parcels.filter(x => (x.status || '').toLowerCase() === 'delivered').length;
+        const transit = parcels.length - delivered;
         s = { total: parcels.length, delivered, inTransit: transit };
         acts = parcels.slice(-5).map(x => `Sent parcel ${x.trackingId}`);
-        setStats(s);
+         setStats(s);
       }
+
 
       if (role === 'handler') {
         const handled = await getParcelsHandledByHandler();
@@ -371,7 +372,7 @@ export default function ProfilePage() {
       <h3 className="text-lg font-semibold text-white mb-4">
         Parcel Status Overview
       </h3>
-      <div className="h-64 w-full">
+      <div className="h-80 w-full">
         <Bar
           data={chartData}
           options={{
