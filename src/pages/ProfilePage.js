@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 import {
   fetchProfile,
   updateProfile,
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [edit, setEdit] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const fieldMeta = {
     name: { label: 'Full Name', icon: <FiUser /> },
@@ -237,6 +239,12 @@ export default function ProfilePage() {
     
     {/* Buttons: Back and Logout, top right over banner */}
     <div className="absolute top-4 right-4 flex space-x-4">
+       <button
+        onClick={() => setShowPasswordModal(true)}
+        type="button" 
+        className="text-purple-700 hover:text-white border border-purple-700 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-purple-400 dark:text-purple-400 dark:hover:text-white dark:hover:bg-purple-500 dark:focus:ring-purple-900">
+          Change Password
+       </button>
       <button 
         onClick={() => navigate('/dashboard')}
         type="button" 
@@ -246,6 +254,11 @@ export default function ProfilePage() {
       <LogoutButton />
     </div>
   </div>
+
+  <ChangePasswordModal
+  isOpen={showPasswordModal}
+  onClose={() => setShowPasswordModal(false)}
+  />
 
   {/* Avatar and Name/Role container */}
   <div className="relative flex flex-col items-center -mt-12 mb-6">

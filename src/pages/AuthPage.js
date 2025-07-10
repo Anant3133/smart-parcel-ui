@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { login, register } from '../api/auth';
 import { saveToken, getTokenPayload } from '../utils/token';
 import { motion, AnimatePresence } from 'framer-motion';
+import ResetPasswordModal from '../components/ResetPasswordModal';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 export default function AuthPage() {
   const [mode, setMode] = useState('login');
@@ -12,6 +14,9 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetFlow, setResetFlow] = useState(null); // holds { email, token }
+
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -167,7 +172,32 @@ export default function AuthPage() {
                   {mode === 'login' ? 'New user? Register' : 'Already registered? Login'}
                 </button>
               </div>
+              {mode === 'login' && (
+                <div className="mt-2 text-center">
+                    <button
+                     onClick={() => setShowForgotModal(true)}
+                     className="text-sm text-blue-400 hover:text-blue-200 hover:underline transition"
+                     disabled={loading}
+                    >
+                       Forgot Password?
+                    </button>
+                </div>
+             )}
             </div>
+            {showForgotModal && (
+              <ForgotPasswordModal
+                onClose={() => setShowForgotModal(false)}
+                onTokenGenerated={(data) => setResetFlow(data)}
+              />
+            )}
+
+            {resetFlow && (
+              <ResetPasswordModal
+                email={resetFlow.email}
+                token={resetFlow.token}
+                onClose={() => setResetFlow(null)}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -16,7 +16,30 @@ L.Icon.Default.mergeOptions({
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component to auto-fit bounds and trigger map refresh after render
+// Custom icons
+const senderIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const deliveryIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// Auto-fit map bounds
 function FitMapToRoute({ positions }) {
   const map = useMap();
 
@@ -27,8 +50,8 @@ function FitMapToRoute({ positions }) {
         map.fitBounds(positions, { padding: [50, 50] });
         console.log('Map fitted to:', positions);
       }
-    }, 300); // Delay ensures layout is visible before rendering
-  }, [positions]);
+    }, 300);
+  }, [positions, map]);
 
   return null;
 }
@@ -64,40 +87,40 @@ export default function RouteMap({ senderAddress, deliveryAddress, onClose }) {
     }
   };
 
-  const fetchRoute = async () => {
-    setLoading(true);
-    const from = await fetchCoords(senderAddress);
-    const to = await fetchCoords(deliveryAddress);
-
-    if (from && to) {
-      setPositions([from, to]);
-
-      try {
-        const res = await axios.post(
-          'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
-          {
-            coordinates: [[from[1], from[0]], [to[1], to[0]]],
-          },
-          {
-            headers: {
-              Authorization: '5b3ce3597851110001cf62482f02ab4e6b784a12a9e5d1ac9ae00cc2',
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        const coords = res.data.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-        console.log('Route coordinates:', coords);
-        setRoute(coords);
-      } catch (err) {
-        console.error('Error fetching route from OpenRouteService:', err);
-        setRoute([]);
-      }
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    const fetchRoute = async () => {
+      setLoading(true);
+      const from = await fetchCoords(senderAddress);
+      const to = await fetchCoords(deliveryAddress);
+
+      if (from && to) {
+        setPositions([from, to]);
+
+        try {
+          const res = await axios.post(
+            'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
+            {
+              coordinates: [[from[1], from[0]], [to[1], to[0]]],
+            },
+            {
+              headers: {
+                Authorization: '5b3ce3597851110001cf62482f02ab4e6b784a12a9e5d1ac9ae00cc2',
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          const coords = res.data.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+          console.log('Route coordinates:', coords);
+          setRoute(coords);
+        } catch (err) {
+          console.error('Error fetching route from OpenRouteService:', err);
+          setRoute([]);
+        }
+      }
+      setLoading(false);
+    };
+
     fetchRoute();
   }, [senderAddress, deliveryAddress]);
 
@@ -131,11 +154,14 @@ export default function RouteMap({ senderAddress, deliveryAddress, onClose }) {
               attribution="&copy; OpenStreetMap contributors"
             />
             <FitMapToRoute positions={positions} />
-            {positions.map((pos, idx) => (
-              <Marker key={idx} position={pos}>
-                <Popup>{idx === 0 ? 'Sender' : 'Delivery'}</Popup>
-              </Marker>
-            ))}
+
+            <Marker position={positions[0]} icon={senderIcon}>
+              <Popup>Sender</Popup>
+            </Marker>
+            <Marker position={positions[1]} icon={deliveryIcon}>
+              <Popup>Delivery</Popup>
+            </Marker>
+
             {route.length > 0 && (
               <Polyline
                 positions={route}

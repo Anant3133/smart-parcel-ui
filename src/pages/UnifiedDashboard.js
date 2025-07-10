@@ -958,7 +958,8 @@ const parcelsCreatedChartOptions = {
     return (
       <>
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black text-gray-300 p-8 font-sans "
-             style={{ backgroundImage: 'url(/senderbg3.jpg)' }}>
+             //style={{ backgroundImage: 'url(/senderbg3.jpg)' }}
+             >
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-4xl font-extrabold text-white flex items-center space-x-3">
                   <FiPackage size={36} className="text-green-400" />
