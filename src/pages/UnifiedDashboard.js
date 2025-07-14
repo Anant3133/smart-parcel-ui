@@ -690,6 +690,7 @@ const parcelsCreatedChartOptions = {
               type="text"
               placeholder="Enter Tracking ID"
               value={trackingId}
+              readOnly
               onChange={e => setTrackingId(e.target.value)}
               className="p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -701,6 +702,7 @@ const parcelsCreatedChartOptions = {
               type="text"
               placeholder="Enter Delivery Address"
               value={location}
+              readOnly
               onChange={e => setLocation(e.target.value)}
               className="p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -832,7 +834,7 @@ const parcelsCreatedChartOptions = {
                   <th className="p-3 text-left">Delivery Address</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Timeline</th>
-                  <th className="p-3 text-center">Tamper Alert</th>
+                  {/*<th className="p-3 text-center">Tamper Alert</th>*/}
                   <th className="p-3 text-center">Veiw Route</th>
                 </tr>
               </thead>
@@ -870,7 +872,7 @@ const parcelsCreatedChartOptions = {
                               View Timeline
                           </button>
                         </td>
-                        <td className="p-3 text-center">
+                       {/* <td className="p-3 text-center">
                           <button type="button" 
                             onClick={() => handleTamper(tracking)}
                             title="Raise Tamper Alert"
@@ -878,7 +880,7 @@ const parcelsCreatedChartOptions = {
                               <FiAlertTriangle size={18} />
                               Raise Alert
                           </button>
-                        </td>
+                        </td> */}
                         <td className="p-3 text-center">
                           <button type="button" 
                              onClick={() => handleShowRoute(p.trackingId)}
